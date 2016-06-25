@@ -1,0 +1,37 @@
+#!/bin/bash
+# Script to check the dependency programs needed in order to run BrainConnMatrix
+
+MATLAB=0
+FSL=0
+
+#dcm2nii
+if [[ "`which matlab`" == "" ]]; then
+  MATLAB=1
+fi
+if [[ `which fsl` == "" ]]; then
+  FSL=1
+fi
+if [[ ! -d "$FSLDIR/data" ]]; then
+  FSLDATA=1
+fi
+
+#Show list of dependecy
+if [[ $MATLAB -eq 1 || $FSL -eq 1 || $FSLDATA -eq 1 ]]; then
+  echo "templateCreator need some programs to work properly. Please provide a previous installation of the programs listed below:"
+  if [[ $MATLAB -eq 1 ]]; then
+    echo "  -> Matlab program is missing!"
+    echo "Please, previously install Matlab in order to use BrainConnMatrix"
+    echo ""
+    echo "  More information in the website: http://uk.mathworks.com/products/matlab/"
+    echo ""
+  fi
+  if [[ $FSLDATA -eq 1 ]]; then
+    echo "  -> FSL data folder is missing! Please intall the full FSL packages before using this script."
+    echo "The data folder (usually located in /usr/share/fsl/data/) is missing. Please, intall the full FSL package, including the atlas and brain templates."
+    echo ""
+    echo "  More information in the website: http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/"
+    echo ""
+  fi
+  echo "BrainConnMatrix terminated. (I'll be back!)"
+  exit
+fi

@@ -1,0 +1,52 @@
+#!/bin/bash
+# Scripts tools to create brain connectivity matrix from BEDPOSTX FSL output data.
+
+usage(){
+  echo "  BrainConnMatrix - Brain connectivity matrix tools"
+  echo "    Scripts tools to create brain connectivity matrix from BEDPOSTX FSL output data"
+  echo ""
+  echo "  $(basename $0) <BEDPOSTX output folder path> <Cortical labels image file> [Cortical labels XML]"
+  echo "      <BEDPOSTX output folder path> = The output folder where are the essentials files to create the connectivity matrix"
+  echo "      <Cortical labels image file> = The cortical labels image that you want to build the connectivity matrix. It could be used any cortical label set, such as Harvard Oxford, MNI and others."
+  echo "  Optional:"
+  echo "      [Cortical labels XML] = The FSL atlas XML file which name each cortical label. Use it if your cortical label image file come from FSL atlas folder."
+}
+
+if [[ $# -lt 2 ]]; then
+  usage
+  exit
+fi
+
+BEDPOSTX_PATH=$1
+CORTICAL_LABELS=$2
+CORTICAL_DIR=$(dirname $CORTICAL_LABELS)
+XMLLABELS=$3
+
+
+echo -ne "  -> Check programs dependency..."
+source dependecy_check
+echo -ne "Done\n"
+
+echo "  -> Preparing the cortical labels masks"
+echo "    --> Labels file: $(basename $CORTICAL_LABELS)"
+echo "    --> Number of labels: `fslstats -t $CORTICAL_LABELS -R | awk '{print $2}'`"
+NUM_LABELS=`fslstats -t $CORTICAL_LABELS -R | awk '{print $2}'`
+echo -ne "  -> Creating labels masks..."
+source split_labels $NUM_LABELS $CORTICAL_LABELS $BEDPOSTX_PATH
+
+echo "  -> Calculating probability tractography..."
+SEEDS=`ls $BEDPOSTX_PATH/CMLabels | grep label-`
+#Parameters
+NUMSAMPLES=`cat config.txt | grep NUMSAMPLES= | cut -c12-20`
+
+for s in ${SEEDS[@]}; do
+  echo -ne "probtrackx2 - Seed: $s\r"
+  # Target mask - Usually the whole brain cortex
+  echo ${CORTICAL_LABELS} > ${CORTICAL_DIR}/target.txt
+  probtrackx2  -x $BEDPOSTX_PATH/CMLabels/${s} -l --onewaycondition --omatrix2 --target2=$CORTICAL_LABELS -c 0.2 -S 2000 --steplength=0.5 -P $NUMSAMPLES --fibthresh=0.01 --distthresh=0.0 --sampvox=0.0 --xfm=${BEDPOSTX_PATH}/xfms/standard2diff.mat --forcedir --opd -s ${BEDPOSTX_PATH}/merged -m ${BEDPOSTX_PATH}/nodif_brain_mask  --dir=${BEDPOSTX_PATH}/${s%.*.*}_BrainConn --targetmasks=${CORTICAL_DIR}/target.txt --os2t
+done
+echo -ne "\n"
+echo "PROBTRACKX: Done"
+
+echo "  *** All the probabilistic tractographies are done ***"
+echo "Tip: Use the coonmatrixreformat.m script to continue the process."

@@ -1,0 +1,25 @@
+#!/bin/bash
+# Split the labels from a global brain cortical map
+
+NUM_LABELS=${1%.*}
+CORTICAL_LABELS=$2
+BEDPOSTX_PATH=$3
+OUTPUTFOLDER=$BEDPOSTX_PATH/CMLabels
+
+if [[ `ls $BEDPOSTX_PATH | grep CMLabels` == "" ]]; then
+  mkdir $BEDPOSTX_PATH/CMLabels
+fi
+
+# Split each label value to a mask
+echo -ne "    -->Created label:"
+for((l=1; l<=$NUM_LABELS; l++)); do
+  echo -ne " ${l}"
+  if [[ $l -lt 10 ]]; then
+    fslmaths $CORTICAL_LABELS -thr ${l} -uthr ${l} $OUTPUTFOLDER/label-00${l}
+  elif [[ $l -ge 10 && $l -lt 100 ]]; then
+    fslmaths $CORTICAL_LABELS -thr ${l} -uthr ${l} $OUTPUTFOLDER/label-0${l}
+  elif [[ $l -ge 100 && $l -lt 1000 ]]; then
+    fslmaths $CORTICAL_LABELS -thr ${l} -uthr ${l} $OUTPUTFOLDER/label-${l}
+  fi
+done
+echo -ne "\n"
