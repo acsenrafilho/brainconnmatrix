@@ -2,8 +2,8 @@
 # Scripts tools to create brain connectivity matrix from BEDPOSTX FSL output data.
 
 usage(){
-  echo "  BrainConnMatrix - Brain connectivity matrix tools"
-  echo "    Scripts tools to create brain connectivity matrix from BEDPOSTX FSL output data"
+  echo "  BrainConnMatrix - Brain connectivity matrix tool"
+  echo "    Scripts to create brain connectivity matrix from BEDPOSTX FSL output data"
   echo ""
   echo "  $(basename $0) <BEDPOSTX output folder path> <Cortical labels image file> [Cortical labels XML]"
   echo "      <BEDPOSTX output folder path> = The output folder where are the essentials files to create the connectivity matrix"
@@ -47,6 +47,12 @@ for s in ${SEEDS[@]}; do
 done
 echo -ne "\n"
 echo "PROBTRACKX: Done"
+
+# TODO Finish the XML tags selection and tranformation to a Nx1 table...easy to plot 
+# if [[ ! XMLLABELS == "" ]]; then
+#   echo "  -> Reformating XML file tags"
+#   source xml_reformat $XMLLABELS ${NUM_LABELS%.*} $BEDPOSTX_PATH/CMLabels
+# fi
 
 echo "  *** All the probabilistic tractographies are done ***"
 echo "Tip: Use the coonmatrixreformat.m script to continue the process."
