@@ -24,7 +24,7 @@ XMLLABELS=$3
 
 
 echo -ne "  -> Check programs dependency..."
-source dependecy_check
+source dependecy_check $BEDPOSTX_PATH
 echo -ne "Done\n"
 
 echo "  -> Preparing the cortical labels masks"
@@ -38,17 +38,19 @@ echo "  -> Calculating probability tractography..."
 SEEDS=`ls $BEDPOSTX_PATH/CMLabels | grep label-`
 #Parameters
 NUMSAMPLES=`cat config.txt | grep NUMSAMPLES= | cut -c12-20`
+FIBERTHR=`cat config.txt | grep FIBERTHR= | cut -c10-18`
+STEPLENGTH=`cat config.txt | grep STEPLENGTH= | cut -c12-20`
 
 for s in ${SEEDS[@]}; do
   echo -ne "probtrackx2 - Seed: $s\r"
   # Target mask - Usually the whole brain cortex
   echo ${CORTICAL_LABELS} > ${CORTICAL_DIR}/target.txt
-  probtrackx2  -x $BEDPOSTX_PATH/CMLabels/${s} -l --onewaycondition --omatrix2 --target2=$CORTICAL_LABELS -c 0.2 -S 2000 --steplength=0.5 -P $NUMSAMPLES --fibthresh=0.01 --distthresh=0.0 --sampvox=0.0 --xfm=${BEDPOSTX_PATH}/xfms/standard2diff.mat --forcedir --opd -s ${BEDPOSTX_PATH}/merged -m ${BEDPOSTX_PATH}/nodif_brain_mask  --dir=${BEDPOSTX_PATH}/${s%.*.*}_BrainConn --targetmasks=${CORTICAL_DIR}/target.txt --os2t
+  probtrackx2  -x $BEDPOSTX_PATH/CMLabels/${s} -l --onewaycondition --omatrix2 --target2=$CORTICAL_LABELS -c 0.2 -S 2000 --steplength=$STEPLENGTH -P $NUMSAMPLES --fibthresh=$FIBERTHR --distthresh=0.0 --sampvox=0.0 --xfm=${BEDPOSTX_PATH}/xfms/standard2diff.mat --forcedir --opd -s ${BEDPOSTX_PATH}/merged -m ${BEDPOSTX_PATH}/nodif_brain_mask  --dir=${BEDPOSTX_PATH}/${s%.*.*}_BrainConn --targetmasks=${CORTICAL_DIR}/target.txt --os2t
 done
 echo -ne "\n"
 echo "PROBTRACKX: Done"
 
-# TODO Finish the XML tags selection and tranformation to a Nx1 table...easy to plot 
+# TODO Finish the XML tags selection and tranformation to a Nx1 table...easy to plot
 # if [[ ! XMLLABELS == "" ]]; then
 #   echo "  -> Reformating XML file tags"
 #   source xml_reformat $XMLLABELS ${NUM_LABELS%.*} $BEDPOSTX_PATH/CMLabels

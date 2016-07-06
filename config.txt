@@ -2,6 +2,12 @@
 
 ## Probabilistic tractography parameters
 # -> Number of samples
-NUMSAMPLES=5
+NUMSAMPLES=5000
+
+# -> Fiber Threshold
+FIBERTHR=0.01
+
+# -> Step length
+STEPLENGTH=0.5
 
 #-c 0.2 -S 2000 --steplength=0.5 --fibthresh=0.01 --distthresh=0.0

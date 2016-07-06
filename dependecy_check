@@ -1,10 +1,13 @@
 #!/bin/bash
 # Script to check the dependency programs needed in order to run BrainConnMatrix
 
+BEDPOSTX_PATH=$1
+
 MATLAB=0
 FSL=0
+REGMAT=0
 
-#dcm2nii
+#Detect matlab, FSL and registration .mat files
 if [[ "`which matlab`" == "" ]]; then
   MATLAB=1
 fi
@@ -14,10 +17,13 @@ fi
 if [[ ! -d "$FSLDIR/data" ]]; then
   FSLDATA=1
 fi
+if [[ ! -e $BEDPOSTX_PATH/xfms/standard2diff.mat ]]; then
+  REGMAT=1
+fi
 
 #Show list of dependecy
-if [[ $MATLAB -eq 1 || $FSL -eq 1 || $FSLDATA -eq 1 ]]; then
-  echo "templateCreator need some programs to work properly. Please provide a previous installation of the programs listed below:"
+if [[ $MATLAB -eq 1 || $FSL -eq 1 || $FSLDATA -eq 1 || $REGMAT -eq 1 ]]; then
+  echo "templateCreator need some programs and/or files to work properly. Please provide a previous installation of the programs listed below:"
   if [[ $MATLAB -eq 1 ]]; then
     echo "  -> Matlab program is missing!"
     echo "Please, previously install Matlab in order to use BrainConnMatrix"
@@ -30,6 +36,12 @@ if [[ $MATLAB -eq 1 || $FSL -eq 1 || $FSLDATA -eq 1 ]]; then
     echo "The data folder (usually located in /usr/share/fsl/data/) is missing. Please, intall the full FSL package, including the atlas and brain templates."
     echo ""
     echo "  More information in the website: http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/"
+    echo ""
+  fi
+  if [[ $REGMAT -eq 1 ]]; then
+    echo "  -> Registration .mat file is missing! Please provide a linear registration between the DTI and standard template before call the BrainConnMatrix scripts."
+    echo "Usually, you can create the registration file using the Registration tab in FDT FSL tools. The standard2diff.mat file MUST be in the xfms folder, which is found inside the BEDPOSTX input folder."
+    echo ""
     echo ""
   fi
   echo "BrainConnMatrix terminated. (I'll be back!)"
