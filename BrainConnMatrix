@@ -19,7 +19,7 @@ fi
 
 BEDPOSTX_PATH=$1
 CORTICAL_LABELS=$2
-CORTICAL_DIR=$(dirname $CORTICAL_LABELS)
+# CORTICAL_DIR=$(dirname $CORTICAL_LABELS)
 XMLLABELS=$3
 
 
@@ -41,11 +41,12 @@ NUMSAMPLES=`cat config.txt | grep NUMSAMPLES= | cut -c12-20`
 FIBERTHR=`cat config.txt | grep FIBERTHR= | cut -c10-18`
 STEPLENGTH=`cat config.txt | grep STEPLENGTH= | cut -c12-20`
 
+# Target mask - Usually the whole brain cortex
+echo ${CORTICAL_LABELS} > ${BEDPOSTX_PATH}/target.txt
+
 for s in ${SEEDS[@]}; do
   echo -ne "probtrackx2 - Seed: $s\r"
-  # Target mask - Usually the whole brain cortex
-  echo ${CORTICAL_LABELS} > ${CORTICAL_DIR}/target.txt
-  probtrackx2  -x $BEDPOSTX_PATH/CMLabels/${s} -l --onewaycondition --omatrix2 --target2=$CORTICAL_LABELS -c 0.2 -S 2000 --steplength=$STEPLENGTH -P $NUMSAMPLES --fibthresh=$FIBERTHR --distthresh=0.0 --sampvox=0.0 --xfm=${BEDPOSTX_PATH}/xfms/standard2diff.mat --forcedir --opd -s ${BEDPOSTX_PATH}/merged -m ${BEDPOSTX_PATH}/nodif_brain_mask  --dir=${BEDPOSTX_PATH}/${s%.*.*}_BrainConn --targetmasks=${CORTICAL_DIR}/target.txt --os2t
+  probtrackx2  -x $BEDPOSTX_PATH/CMLabels/${s} -l --onewaycondition --omatrix2 --target2=$CORTICAL_LABELS -c 0.2 -S 2000 --steplength=$STEPLENGTH -P $NUMSAMPLES --fibthresh=$FIBERTHR --distthresh=0.0 --sampvox=0.0 --xfm=${BEDPOSTX_PATH}/xfms/standard2diff.mat --forcedir --opd -s ${BEDPOSTX_PATH}/merged -m ${BEDPOSTX_PATH}/nodif_brain_mask  --dir=${BEDPOSTX_PATH}/${s%.*.*}_BrainConn --targetmasks=${BEDPOSTX_PATH}/target.txt --os2t
 done
 echo -ne "\n"
 echo "PROBTRACKX: Done"
