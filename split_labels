@@ -4,10 +4,10 @@
 NUM_LABELS=${1%.*}
 CORTICAL_LABELS=$2
 BEDPOSTX_PATH=$3
-OUTPUTFOLDER=$BEDPOSTX_PATH/CMLabels
+OUTPUTFOLDER=$BEDPOSTX_PATH/$(basename ${CORTICAL_LABELS%.nii*})
 
-if [[ `ls $BEDPOSTX_PATH | grep CMLabels` == "" ]]; then
-  mkdir $BEDPOSTX_PATH/CMLabels
+if [[ `ls $BEDPOSTX_PATH | grep $(basename ${CORTICAL_LABELS%.nii*})` == "" ]]; then
+  mkdir $BEDPOSTX_PATH/$(basename ${CORTICAL_LABELS%.nii*})
 fi
 
 # Split each label value to a mask

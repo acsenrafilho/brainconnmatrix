@@ -1,4 +1,4 @@
-function bcm=connmatrixreformat(BEDPOSTXpath)
+function bcm=connmatrixreformat(BEDPOSTXpathAtlasFolderPath)
 
 %function connmatrixreformat(fslmatrix)
 %
@@ -7,7 +7,9 @@ function bcm=connmatrixreformat(BEDPOSTXpath)
 %measurements.
 %
 % Input:
-%BEDPOSTXpath     = The BEDPOSTX path where were used in the BrainConnMatrix tool
+%BEDPOSTXpathAtlasFolderPath     = The BEDPOSTX path where were used in the
+%BrainConnMatrix tool and has the brian atlas used in the connectivity
+%evaluation.
 % 
 % Output:
 %bcm              = The brain connectivity matrix resulted from the BEDPOSTX reformating data. This
@@ -15,7 +17,7 @@ function bcm=connmatrixreformat(BEDPOSTXpath)
 
 
 % Get folders name
-folders=dir(BEDPOSTXpath);
+folders=dir(fullfile(BEDPOSTXpathAtlasFolderPath,'*BrainConn'));
 
 % Spliting the input filename to get path, filename and extention
 % [path, filename, ext] = fileparts(fslmatrix);
@@ -23,14 +25,14 @@ folders=dir(BEDPOSTXpath);
 directoryNames = {folders([folders.isdir]).name};
 
 rAux=1;
-for i=4:length(directoryNames)-2
+for i=1:length(directoryNames)
   directoryNames{i}
 
   % Load file
-    data=load(strcat(BEDPOSTXpath,directoryNames{i},'/fdt_matrix2.dot'));
+    data=load(strcat(BEDPOSTXpathAtlasFolderPath,'/',directoryNames{i},'/fdt_matrix2.dot'));
     lsize=size(data);
     if(lsize(1)~=1)
-         
+        
     % Create full matrix from data
     matrix=full(spconvert(data));
 
