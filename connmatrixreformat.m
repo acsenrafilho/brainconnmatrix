@@ -1,6 +1,6 @@
 function bcm=connmatrixreformat(BEDPOSTXpathAtlasFolderPath)
 
-%function connmatrixreformat(fslmatrix)
+%function connmatrixreformat(BEDPOSTXpathAtlasFolderPath)
 %
 %Reformat the probtrackx matrix results to a connectivity matrix. The
 %format used here is able to be applied to quantitative graph theory
@@ -8,7 +8,7 @@ function bcm=connmatrixreformat(BEDPOSTXpathAtlasFolderPath)
 %
 % Input:
 %BEDPOSTXpathAtlasFolderPath     = The BEDPOSTX path where were used in the
-%BrainConnMatrix tool and has the brian atlas used in the connectivity
+%BrainConnMatrix tool and has the brain atlas used in the connectivity
 %evaluation.
 % 
 % Output:

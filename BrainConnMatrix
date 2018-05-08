@@ -3,59 +3,137 @@
 
 usage(){
   echo "  BrainConnMatrix - Brain connectivity matrix tool"
-  echo "    Scripts to create brain connectivity matrix from BEDPOSTX FSL output data"
+  echo "    Scripts to create strucutral brain connectivity from BEDPOSTX FSL output data"
   echo ""
-  echo "  $(basename $0) <BEDPOSTX output folder path> <Cortical labels image file> [Cortical labels XML]"
-  echo "      <BEDPOSTX output folder path> = The output folder where are the essentials files to create the connectivity matrix"
+  echo "  $(basename $0) <Input folder full path> <Cortical labels image file> [Cortical labels XML]"
+  echo "      <Input folder full path> = The full path to a folder with dwi data (*.nii.gz format), *.bvec and *.bval text files. The name of file does not matters, however the file extension MUST be .nii.gz, .bvec and .bval"
   echo "      <Cortical labels image file> = The cortical labels image that you want to build the connectivity matrix. It could be used any cortical label set, such as Harvard Oxford, MNI and others."
   echo "  Optional:"
   echo "      [Cortical labels XML] = The FSL atlas XML file which name each cortical label. Use it if your cortical label image file come from FSL atlas folder."
 }
 
-if [[ $# -lt 2 ]]; then
-  usage
-  exit
+
+SUBJ_PATH=""
+CORTICAL_LABELS=""
+# CORTICAL_DIR=$(dirname $CORTICAL_LABELS)
+XMLLABELS=""
+BETOPTS=""
+BEDPOSTXOPTS=""
+
+while getopts "f:c:l:b:x:" opt; do
+  case $opt in
+    f)
+    SUBJ_PATH=$OPTARG
+    ;;
+    c)
+    CORTICAL_LABELS=$OPTARG
+    ;;
+    l)
+    XMLLABELS=$OPTARG
+    ;;
+    b)
+    BETOPTS=$OPTARG
+    ;;
+    x)
+    BEDPOSTXOPTS=$OPTARG
+    ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit
+      ;;
+    :)
+    echo "Option -$OPTARG requires an argument."
+    exit 1
+    ;;
+  esac
+done
+
+#Check if input values exist
+if [[ ! -d $SUBJ_PATH ]]; then
+  echo "ERROR: The input directory does not exist ($SUBJ_PATH)"
+  exit 1
+elif [[ ! -e $CORTICAL_LABELS ]]; then
+  echo "ERROR: The cortical label file does not exist ($CORTICAL_LABELS)"
+  exit 1
+elif [[ ! -e $XMLLABELS && ! "$XMLLABELS" == "" ]]; then
+  echo "ERROR: The XML label file does not exist ($XMLLABELS)"
+  exit 1
 fi
 
-BEDPOSTX_PATH=$1
-CORTICAL_LABELS=$2
-# CORTICAL_DIR=$(dirname $CORTICAL_LABELS)
-XMLLABELS=$3
+if [[ "$BETOPTS" == "" ]]; then
+  BETOPTS='-f 0.3'
+fi
 
+if [[ "$BEDPOSTXOPTS" == "" ]]; then
+  BEDPOSTXOPTS='-n 2'
+fi
+
+echo "***Starting BrainConnMatrix***" >> $SUBJ_PATH/BCM-`date -I`.log
+echo "Subject: $SUBJ_PATH" >> $SUBJ_PATH/BCM-`date -I`.log
+echo "Cortical labels: $CORTICAL_LABELS" >> $SUBJ_PATH/BCM-`date -I`.log
+echo "BET options: $BETOPTS" >> $SUBJ_PATH/BCM-`date -I`.log
+echo "BEDPOSTX options: $BEDPOSTXOPTS" >> $SUBJ_PATH/BCM-`date -I`.log
+echo "******************************" >> $SUBJ_PATH/BCM-`date -I`.log
 
 echo -ne "  -> Check programs dependency..."
-source $(dirname $0)/dependecy_check $BEDPOSTX_PATH
+source $(dirname $0)/dependecy_check
 echo -ne "Done\n"
 
+#Apply BEDPOSTX formating and processing
+echo -ne "  -> BEDPOSTX processing...this may take several hours..."
+DATA_PATH=$SUBJ_PATH/`ls $SUBJ_PATH | grep .nii.gz`
+BVAL_PATH=$SUBJ_PATH/`ls $SUBJ_PATH | grep .bval`
+BVEC_PATH=$SUBJ_PATH/`ls $SUBJ_PATH | grep .bvec`
+source $(dirname $0)/bedpostx_processing $DATA_PATH $BVAL_PATH $BVEC_PATH "$BETOPTS" "$BEDPOSTXOPTS">> $SUBJ_PATH/BCM-`date -I`.log
+echo -ne "Done\n"
+
+# Applying the cortical labels in the structural connectivity pipeline
+echo "  -> Preparing the cortical labels masks" >> $SUBJ_PATH/BCM-`date -I`.log
 echo "  -> Preparing the cortical labels masks"
 echo "    --> Labels file: $(basename $CORTICAL_LABELS)"
 echo "    --> Number of labels: `fslstats -t $CORTICAL_LABELS -R | awk '{print $2}'`"
 NUM_LABELS=`fslstats -t $CORTICAL_LABELS -R | awk '{print $2}'`
 echo -ne "  -> Creating labels masks..."
-source $(dirname $0)/split_labels $NUM_LABELS $CORTICAL_LABELS $BEDPOSTX_PATH
+source $(dirname $0)/split_labels $NUM_LABELS $CORTICAL_LABELS $SUBJ_PATH >> $SUBJ_PATH/BCM-`date -I`.log
 
+echo "  -> Calculating probability tractography..." >> $SUBJ_PATH/BCM-`date -I`.log
 echo "  -> Calculating probability tractography..."
-SEEDS=`ls $BEDPOSTX_PATH/$(basename ${CORTICAL_LABELS%.nii*}) | grep label-`
+SEEDS=`ls $SUBJ_PATH/$(basename ${CORTICAL_LABELS%.nii*}) | grep label-`
 #Parameters
 NUMSAMPLES=`cat $(dirname $0)/config.txt | grep NUMSAMPLES= | cut -c12-20`
 FIBERTHR=`cat $(dirname $0)/config.txt | grep FIBERTHR= | cut -c10-18`
 STEPLENGTH=`cat $(dirname $0)/config.txt | grep STEPLENGTH= | cut -c12-20`
 
 # Target mask - Usually the whole brain cortex
-echo ${CORTICAL_LABELS} > ${BEDPOSTX_PATH}/target.txt
+echo ${CORTICAL_LABELS} > ${SUBJ_PATH}/target.txt
 
 for s in ${SEEDS[@]}; do
   echo -ne "probtrackx2 - Seed: $s\r"
-  probtrackx2  -x $BEDPOSTX_PATH/$(basename ${CORTICAL_LABELS%.nii*})/${s} -l --onewaycondition --omatrix2 --target2=$CORTICAL_LABELS -c 0.2 -S 2000 --steplength=$STEPLENGTH -P $NUMSAMPLES --fibthresh=$FIBERTHR --distthresh=0.0 --sampvox=0.0 --xfm=${BEDPOSTX_PATH}/xfms/standard2diff.mat --forcedir --opd -s ${BEDPOSTX_PATH}/merged -m ${BEDPOSTX_PATH}/nodif_brain_mask  --dir=${BEDPOSTX_PATH}/$(basename ${CORTICAL_LABELS%.nii*})/${s%.*.*}_BrainConn --targetmasks=${BEDPOSTX_PATH}/target.txt --os2t
+  probtrackx2  -x $SUBJ_PATH/$(basename ${CORTICAL_LABELS%.nii*})/${s} -l --onewaycondition --omatrix2 --target2=$CORTICAL_LABELS -c 0.2 -S 2000 --steplength=$STEPLENGTH -P $NUMSAMPLES --fibthresh=$FIBERTHR --distthresh=0.0 --sampvox=0.0 --xfm=${SUBJ_PATH}/xfms/standard2diff.mat --forcedir --opd -s ${SUBJ_PATH}/merged -m ${SUBJ_PATH}/nodif_brain_mask  --dir=${SUBJ_PATH}/$(basename ${CORTICAL_LABELS%.nii*})/${s%.*.*}_BrainConn --targetmasks=${SUBJ_PATH}/target.txt --os2t
 done
 echo -ne "\n"
 echo "PROBTRACKX: Done"
+echo "PROBTRACKX: Done" >> $SUBJ_PATH/BCM-`date -I`.log
 
 # TODO Finish the XML tags selection and tranformation to a Nx1 table...easy to plot
 # if [[ ! XMLLABELS == "" ]]; then
 #   echo "  -> Reformating XML file tags"
-#   source xml_reformat $XMLLABELS ${NUM_LABELS%.*} $BEDPOSTX_PATH/$(basename ${CORTICAL_LABELS%.nii*})
+#   source xml_reformat $XMLLABELS ${NUM_LABELS%.*} $SUBJ_PATH/$(basename ${CORTICAL_LABELS%.nii*})
 # fi
 
-echo "  *** All the probabilistic tractographies are done ***"
-echo "Tip: Use the coonmatrixreformat.m script to continue the process."
+#Matlab reformating for adjacency matrix
+echo "  -> Matlab reformating for adjacency matrix..." >> $SUBJ_PATH/BCM-`date -I`.log
+echo -ne "  -> Matlab reformating for adjacency matrix..."
+matlab nohup -nodesktop -nodisplay -nosplash << EOF
+cd $(dirname $0);
+matrix=coonmatrixreformat('${SUBJ_PATH}/$(basename ${CORTICAL_LABELS%.nii*})/');
+save('$SUBJ_PATH/$(basename $SUBJ_PATH)_adjacency_matrix.mat');
+EOF
+echo -ne "Done\n"
+echo -ne "Done\n" >> $SUBJ_PATH/BCM-`date -I`.log
+
+echo "           *** All the probabilistic tractographies are done ***"
+echo "  *** Open the $(basename $SUBJ_PATH)_adjacency_matrix.mat file in Matlab ***"
+echo "           *** All the probabilistic tractographies are done ***" >> $SUBJ_PATH/BCM-`data -I`.log
+echo "  *** Open the $(basename $SUBJ_PATH)_adjacency_matrix.mat file in Matlab ***" >> $SUBJ_PATH/BCM-`data -I`.log
+# echo "Tip: Use the coonmatrixreformat.m script to continue the process."
