@@ -31,13 +31,14 @@ fi
 
 echo "BEDPOSTX file formating on folder $(dirname $DATA)"
 #Renaming the input files to be organized in the BEDPOSTX pattern
-cp $DATA $(dirname $DATA)/data.nii.gz
-cp $BVALS $(dirname $DATA)/bvals
-cp $BVECS $(dirname $DATA)/bvecs
+mkdir $(dirname $DATA)/BrainConnMatrix.data
+cp $DATA $(dirname $DATA)/BrainConnMatrix.data/data.nii.gz
+cp $BVALS $(dirname $DATA)/BrainConnMatrix.data/bvals
+cp $BVECS $(dirname $DATA)/BrainConnMatrix.data/bvecs
 
 #Creating the brain mask
-if [[ ! -e $(dirname $DATA)/nodif_brain_mask.nii.gz ]]; then
-  bet $DATA $(dirname $DATA)/nodif_brain -v -m $BETOP
+if [[ ! -e $(dirname $DATA)/BrainConnMatrix.data/nodif_brain_mask.nii.gz ]]; then
+  bet $DATA $(dirname $DATA)/BrainConnMatrix.data/nodif_brain -v -m $BETOP
   echo "***"
   printf "TIP: Check if the brain mask was correctly made (file: nodif_brain_mask.nii.gz). \nIf this was not the case, stop the process and change the BET options.\n"
   echo "***"
@@ -48,8 +49,8 @@ fi
 
 echo "BEDPOSTX processing...this may take several hours"
 # Running BEDPOSTX
-bedpostx $(dirname $DATA) `echo $BEDPOSTXOPT`
+bedpostx $(dirname $DATA)/BrainConnMatrix.data `echo $BEDPOSTXOPT`
 
 # Registration between native and MNI space
-flirt -in $(dirname $DATA)/nodif_brain -ref $FSLDIR/data/standard/MNI152_T1_2mm_brain -omat $(dirname $DATA)/xfms/diff2standard.mat -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12
-convert_xfm -omat $(dirname $DATA)/xfms/standard2diff.mat -inverse $(dirname $DATA)/xfms/diff2standard.mat
+flirt -in $(dirname $DATA)/BrainConnMatrix.data/nodif_brain -ref $FSLDIR/data/standard/MNI152_T1_2mm_brain -omat $(dirname $DATA)/BrainConnMatrix.data.bedpostX/xfms/diff2standard.mat -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12
+convert_xfm -omat $(dirname $DATA)/BrainConnMatrix.data.bedpostX/xfms/standard2diff.mat -inverse $(dirname $DATA)/BrainConnMatrix.data.bedpostX/xfms/diff2standard.mat
