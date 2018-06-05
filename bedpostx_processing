@@ -21,13 +21,13 @@ BVECS=$3
 BETOP=$4
 BEDPOSTXOPT=$5
 
-if [[ "$BETOP" == "" ]]; then
-  BETOP="-f 0.3"
-fi
+#if [[ "$BETOP" == "" ]]; then
+#  BETOP="-f 0.3"
+#fi
 
-if [[ "$BETOP" == "" ]]; then
-  BEDPOSTXOPT="-n 2"
-fi
+#if [[ "$BEDPOSTXOPT" == "" ]]; then
+#  BEDPOSTXOPT=""
+#fi
 
 echo "BEDPOSTX file formating on folder $(dirname $DATA)"
 #Renaming the input files to be organized in the BEDPOSTX pattern
@@ -49,7 +49,8 @@ fi
 
 echo "BEDPOSTX processing...this may take several hours"
 # Running BEDPOSTX
-bedpostx $(dirname $DATA)/BrainConnMatrix.data `echo $BEDPOSTXOPT`
+echo "Calling BEDPOSTX with the following line: bedpostx $(dirname $DATA)/BrainConnMatrix.data $BEDPOSTXOPT"
+bedpostx $(dirname $DATA)/BrainConnMatrix.data $BEDPOSTXOPT
 
 # Registration between native and MNI space
 flirt -in $(dirname $DATA)/BrainConnMatrix.data/nodif_brain -ref $FSLDIR/data/standard/MNI152_T1_2mm_brain -omat $(dirname $DATA)/BrainConnMatrix.data.bedpostX/xfms/diff2standard.mat -searchrx -90 90 -searchry -90 90 -searchrz -90 90 -dof 12
