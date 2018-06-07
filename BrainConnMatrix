@@ -80,12 +80,16 @@ source $(dirname $0)/dependecy_check
 echo -ne "Done\n"
 
 #Apply BEDPOSTX formating and processing
-echo -ne "  -> BEDPOSTX processing...this may take several hours..."
-DATA_PATH=$SUBJ_PATH/`ls $SUBJ_PATH | grep .nii.gz`
-BVAL_PATH=$SUBJ_PATH/`ls $SUBJ_PATH | grep .bval`
-BVEC_PATH=$SUBJ_PATH/`ls $SUBJ_PATH | grep .bvec`
-source $(dirname $0)/bedpostx_processing $DATA_PATH $BVAL_PATH $BVEC_PATH "$BETOPTS" "$BEDPOSTXOPTS">> $SUBJ_PATH/BCM-`date -I`.log
-echo -ne "Done\n"
+if [[ ! -e $SUBJ_PATH/BrainConnMatrix.data.bedpostX ]]; then
+  echo -ne "  -> BEDPOSTX processing...this may take several hours..."
+  DATA_PATH=$SUBJ_PATH/`ls $SUBJ_PATH | grep .nii.gz`
+  BVAL_PATH=$SUBJ_PATH/`ls $SUBJ_PATH | grep .bval`
+  BVEC_PATH=$SUBJ_PATH/`ls $SUBJ_PATH | grep .bvec`
+  source $(dirname $0)/bedpostx_processing $DATA_PATH $BVAL_PATH $BVEC_PATH "$BETOPTS" "$BEDPOSTXOPTS">> $SUBJ_PATH/BCM-`date -I`.log
+  echo -ne "Done\n"
+else
+  echo -ne "  -> BEDPOSTX processing was already done...jumping to PROBTRACKX processing"
+fi
 
 # Applying the cortical labels in the structural connectivity pipeline
 echo "  -> Preparing the cortical labels masks" >> $SUBJ_PATH/BCM-`date -I`.log
@@ -109,7 +113,7 @@ echo ${CORTICAL_LABELS} > ${SUBJ_PATH}/target.txt
 
 for s in ${SEEDS[@]}; do
   echo -ne "probtrackx2 - Seed: $s\r"
-  probtrackx2  -x $SUBJ_PATH/$(basename ${CORTICAL_LABELS%.nii*})/${s} -l --onewaycondition --omatrix2 --target2=$CORTICAL_LABELS -c 0.2 -S 2000 --steplength=$STEPLENGTH -P $NUMSAMPLES --fibthresh=$FIBERTHR --distthresh=0.0 --sampvox=0.0 --xfm=${SUBJ_PATH}/xfms/standard2diff.mat --forcedir --opd -s ${SUBJ_PATH}/merged -m ${SUBJ_PATH}/nodif_brain_mask  --dir=${SUBJ_PATH}/$(basename ${CORTICAL_LABELS%.nii*})/${s%.*.*}_BrainConn --targetmasks=${SUBJ_PATH}/target.txt --os2t
+  probtrackx2  -x $SUBJ_PATH/$(basename ${CORTICAL_LABELS%.nii*})/${s} -l --onewaycondition --omatrix2 --target2=$CORTICAL_LABELS -c 0.2 -S 2000 --steplength=$STEPLENGTH -P $NUMSAMPLES --fibthresh=$FIBERTHR --distthresh=0.0 --sampvox=0.0 --xfm=${SUBJ_PATH}/BrainConnMatrix.data.bedpostX/xfms/standard2diff.mat --forcedir --opd -s ${SUBJ_PATH}/BrainConnMatrix.data.bedpostX/merged -m ${SUBJ_PATH}/BrainConnMatrix.data/nodif_brain_mask  --dir=${SUBJ_PATH}/$(basename ${CORTICAL_LABELS%.nii*})/${s%.*.*}_BrainConn --targetmasks=${SUBJ_PATH}/target.txt --os2t
 done
 echo -ne "\n"
 echo "PROBTRACKX: Done"
