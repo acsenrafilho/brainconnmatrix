@@ -130,7 +130,7 @@ echo "  -> Matlab reformating for adjacency matrix..." >> $SUBJ_PATH/BCM-`date -
 echo -ne "  -> Matlab reformating for adjacency matrix..."
 matlab nohup -nodesktop -nodisplay -nosplash << EOF
 cd $(dirname $0);
-matrix=coonmatrixreformat('${SUBJ_PATH}/$(basename ${CORTICAL_LABELS%.nii*})/');
+matrix=connmatrixreformat('${SUBJ_PATH}/$(basename ${CORTICAL_LABELS%.nii*})/');
 save('$SUBJ_PATH/$(basename $SUBJ_PATH)_adjacency_matrix.mat');
 EOF
 echo -ne "Done\n"
