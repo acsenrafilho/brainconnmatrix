@@ -139,5 +139,5 @@ echo -ne "Done\n" >> $SUBJ_PATH/BCM-`date -I`.log
 echo "           *** All the probabilistic tractographies are done ***"
 echo "  *** Open the $(basename $SUBJ_PATH)_adjacency_matrix.mat file in Matlab ***"
 echo "           *** All the probabilistic tractographies are done ***" >> $SUBJ_PATH/BCM-`date -I`.log
-echo "  *** Open the $(basename $SUBJ_PATH)_adjacency_matrix.mat file in Matlab ***" >> $SUBJ_PATH/BCM-`data -I`.log
-# echo "Tip: Use the coonmatrixreformat.m script to continue the process."
+echo "  *** Open the $(basename $SUBJ_PATH)_adjacency_matrix.mat file in Matlab ***" >> $SUBJ_PATH/BCM-`date -I`.log
+# echo "Tip: Use the connmatrixreformat.m script to continue the process."
